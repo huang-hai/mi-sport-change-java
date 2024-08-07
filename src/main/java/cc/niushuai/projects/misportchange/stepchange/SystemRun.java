@@ -48,7 +48,7 @@ public class SystemRun {
         StringBuffer sb = new StringBuffer();
         sb.append("phone：").append(user.getUsername());
         sb.append("step:").append(user.getStep());
-        sb.append("res:").append(res);
+        sb.append("res:").append(res).append("/n/n");
 
         System.out.println("18120829818:"+res);
         //Result result = Result.ok(res);
