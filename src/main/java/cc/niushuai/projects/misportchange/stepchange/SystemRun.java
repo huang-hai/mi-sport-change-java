@@ -7,6 +7,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Date;
 
 @EnableScheduling
@@ -18,6 +24,8 @@ public class SystemRun {
 
     private String appid = "wx8d149d9134798e7b";
     private String appsecret = "acd52eca7b61d4fb82821a9ad3cdae53";
+
+    private String sendKey = "SCT254885T1eIhetUYkjyGWRwTncqJo5n7";
 
     /**
      * 每天下午3点半提交步数
@@ -37,6 +45,11 @@ public class SystemRun {
             throw new RuntimeException(e);
         }
 
+        StringBuffer sb = new StringBuffer();
+        sb.append("phone：").append(user.getUsername());
+        sb.append("step:").append(user.getStep());
+        sb.append("res:").append(res);
+
         System.out.println("18120829818:"+res);
         //Result result = Result.ok(res);
         try {
@@ -54,6 +67,12 @@ public class SystemRun {
         }
 
         System.out.println("13696830747:"+res);
+
+        sb.append("phone：").append(user.getUsername());
+        sb.append("step:").append(user.getStep());
+        sb.append("res:").append(res);
+
+        sendMsgToService(sb.toString());
     }
 
     private long getStep(){
@@ -72,5 +91,38 @@ public class SystemRun {
         System.out.println("定时器跑了。。。。。");
         long step = getStep();
         System.out.println("生成步数：" + step);
+    }
+
+    public void sendMsgToService(String desc){
+        String title = "刷步通知";
+
+        try {
+            String url = "https://sctapi.ftqq.com/" + sendKey + ".send";
+            String postData = "text=" + URLEncoder.encode(title, "UTF-8") + "&desp=" + URLEncoder.encode(desc, "UTF-8");
+
+
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+            con.setDoOutput(true);
+            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+            wr.writeBytes(postData);
+            wr.flush();
+            wr.close();
+
+            int responseCode = con.getResponseCode();
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
