@@ -6,13 +6,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import sun.net.www.http.HttpClient;
 
+import javax.net.ssl.*;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 
 @EnableScheduling
@@ -97,14 +101,31 @@ public class SystemRun {
         String title = "刷步通知";
 
         try {
+
             String url = "https://sctapi.ftqq.com/" + sendKey + ".send";
             String postData = "text=" + URLEncoder.encode(title, "UTF-8") + "&desp=" + URLEncoder.encode(desc, "UTF-8");
 
-
             URL obj = new URL(url);
+
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            if (con instanceof HttpsURLConnection) {
+                // 创建一个信任所有证书的TrustManager
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, new TrustManager[]{new TrustAllManager()}, new java.security.SecureRandom());
+                ((HttpsURLConnection) con).setSSLSocketFactory(sc.getSocketFactory());
+
+                // 忽略主机名验证
+                ((HttpsURLConnection) con).setHostnameVerifier(new HostnameVerifier() {
+                    public boolean verify(String s, SSLSession sslSession) {
+                        return true;
+                    }
+                });
+            }
+
             con.setRequestMethod("POST");
             con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
 
             con.setDoOutput(true);
             DataOutputStream wr = new DataOutputStream(con.getOutputStream());
@@ -121,8 +142,22 @@ public class SystemRun {
                 response.append(inputLine);
             }
             in.close();
+            System.out.println(response.toString());
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    // 一个简单的TrustManager，信任所有证书
+    private class TrustAllManager implements X509TrustManager {
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        }
+
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        }
+
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
         }
     }
 }
